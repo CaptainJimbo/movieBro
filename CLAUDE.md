@@ -37,11 +37,14 @@ recommends**.
 ### Build time (Python, offline — local or Actions)
 1. **Ingest:** MovieLens CSVs + TMDB enrichment → SQLite as the working store
    (SQLite is a BUILD artifact, not a server — nothing queries it at runtime).
-2. **CF training:** item-item collaborative filtering — mean-centered cosine
-   over the user-item matrix (classic Sarwar et al. 2001), shrinkage toward 0
-   for low-support pairs (min ~5 co-raters), keep **top-50 neighbors per
-   movie** → `neighbors.json` (~9k × 50 ids+sims, ~2–3 MB). Optional v2:
-   implicit ALS embeddings if cosine disappoints in eval.
+2. **CF training:** item-item collaborative filtering — adjusted cosine
+   (user-mean-centered) over the user-item matrix (classic Sarwar et al.
+   2001), similarity shrinkage **n/(n+β) with β=400** (eval: broad plateau
+   β≈100–800; single digits are folk-noise with 610 users — EVALUATION.md),
+   keep **top-50 neighbors per movie** → `neighbors.json` (measured:
+   **7.25 MB** minified; within total budget). Optional v2: implicit ALS
+   embeddings if cosine disappoints in eval. [Step 2 DONE: CF beats
+   popularity, HR@10 0.42 vs 0.32.]
 3. **Search index:** parent = movie; children = overview sentences, tag
    clusters, keywords, tagline. Embed children with **bge-small-en-v1.5**
    (384-dim; same model family + query-prefix discipline as limenarchisAI).
@@ -75,8 +78,11 @@ pause policy against current Pinecone docs when the Worker stands up (step 3).
   swaps for a recognizable title to keep onboarding productive. Ratings in
   localStorage. NOTHING leaves the device.
 - **Recommendations:** fold-in — for each candidate movie,
-  score = Σ(sim × (user_rating − user_mean)) over rated neighbors, normalized
-  by Σ|sim|; exclude rated movies. Top-3 user genres from rating-weighted
+  score = Σ(sim × (user_rating − user_mean)) over rated neighbors,
+  **UNNORMALIZED** (do NOT divide by Σ|sim| — the eval showed normalization
+  collapses top-N ranking, HR@10 0.42→0.01: it turns the score into a rating
+  prediction and low-evidence candidates flood the top; EVALUATION.md
+  finding 2); exclude rated movies. Top-3 user genres from rating-weighted
   genre counts → **one CF pick per genre** on the dashboard ("your next
   watch"), with a "because you rated X, Y" explanation (the neighbors that
   drove the score — provenance for recsys). **Every dashboard card is ratable
@@ -109,8 +115,10 @@ pause policy against current Pinecone docs when the Worker stands up (step 3).
   Applied **after rerank**, re-ordering ONLY the ~20 search candidates —
   never injects CF-only movies (the query still decides relevance; CF only
   nudges order). Formula is a **convex combination** of normalized scores:
-  `final = (1−α)·sigmoid(rerank) + α·sigmoid(cf)`. Sigmoid (not min-max) →
-  fixed scale, and **cf=0 → 0.5 = neutral**. **α = slider** (debug panel),
+  `final = (1−α)·sigmoid(rerank) + α·sigmoid(cf/τ)`. Sigmoid (not min-max) →
+  fixed scale, and **cf=0 → 0.5 = neutral**; cf is the UNNORMALIZED fold-in
+  score, so its spread grows with ratings count — τ (temperature) calibrated
+  at step 6 so typical scores land in sigmoid's active range. **α = slider** (debug panel),
   default small (~0.15); **CF-silent candidate (no rated neighbors) → 0.5,
   never penalized**; **pre-onboarding → α=0** (pure search). Provenance hover
   shows the nudge ("▲ because you ❤️ Heat, Sicario"). Label it visibly.

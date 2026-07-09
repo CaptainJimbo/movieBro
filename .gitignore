@@ -19,6 +19,7 @@ venv/
 # Data — raw downloads & build store (regenerable; shipped artifacts go in web/public)
 data/raw/
 data/movielens/
+data/build/
 *.sqlite
 *.db
 
