@@ -1,0 +1,32 @@
+# LOCAL-ONLY strategy file — never commit
+CLAUDE.local.md
+
+# Env / secrets (TMDB key lives here locally)
+.env
+.env.*
+
+# Node / frontend
+node_modules/
+dist/
+web/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Data — raw downloads & build store (regenerable; shipped artifacts go in web/public)
+data/raw/
+data/movielens/
+*.sqlite
+*.db
+
+# OS / editor / scratch
+.DS_Store
+.vscode/
+.idea/
+*.log
+.cache/
+.playwright-mcp/
+.ipynb_checkpoints/
