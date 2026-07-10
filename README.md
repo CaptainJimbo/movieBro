@@ -44,9 +44,14 @@ understands *"mind-bending sci-fi like Inception but sadder."*
   part is the thin Worker in front of Pinecone. Both run on free tiers —
   recurring cost: €0.
 
-## Status
+## Try it
 
-🚧 Spec'd, not yet built — see `CLAUDE.md` for architecture and build plan.
+**→ [captainjimbo.github.io/movieBro](https://captainjimbo.github.io/movieBro/)**
+
+Rate 10 posters, get your picks, then search for *"mind-bending sci-fi
+like Inception"* and drag the **blend** slider. Honest numbers behind it
+all: [EVALUATION.md](EVALUATION.md) — including the three times the
+evaluation falsified this very spec.
 
 ## Data & credits
 
