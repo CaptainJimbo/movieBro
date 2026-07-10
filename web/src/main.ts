@@ -1,17 +1,53 @@
-/** App bootstrap: wire the search box to the retrieval pipeline. */
+/**
+ * App bootstrap: view flow (onboarding wall → dashboard) + the search
+ * pipeline. First visit shows the ❤️/🥔/⏭️ wall; once ≥10 reactions are
+ * in localStorage the dashboard (CF picks) and the search bar appear.
+ */
 
 import "./style.css";
 
+import { loadCatalog } from "./data";
+import { renderDashboard } from "./dashboard";
+import { ratingCount } from "./ratings";
 import { search } from "./search";
 import { renderGrid, searchStatus, setStatus } from "./ui";
+import { renderWall } from "./wall";
 
 const queryEl = document.getElementById("query") as HTMLInputElement;
 const goEl = document.getElementById("go") as HTMLButtonElement;
 const statusEl = document.getElementById("status") as HTMLElement;
 const resultsEl = document.getElementById("results") as HTMLElement;
 const emptyEl = document.getElementById("empty") as HTMLElement;
+const onboardingEl = document.getElementById("onboarding") as HTMLElement;
+const dashboardEl = document.getElementById("dashboard") as HTMLElement;
+const searchboxEl = document.getElementById("searchbox") as HTMLElement;
 
+const GATE = 10;
 let busy = false;
+
+/**
+ * Show the onboarding wall view (dashboard + search hidden).
+ * Used on first visit and via the dashboard's "rate more" button.
+ */
+async function showOnboarding(): Promise<void> {
+  dashboardEl.hidden = true;
+  searchboxEl.hidden = true;
+  resultsEl.hidden = true;
+  onboardingEl.hidden = false;
+  renderWall(onboardingEl, await loadCatalog(), showDashboard);
+}
+
+/**
+ * Show the dashboard view (wall hidden, search available below).
+ * Re-renders picks from the current localStorage ratings.
+ */
+async function showDashboard(): Promise<void> {
+  onboardingEl.hidden = true;
+  dashboardEl.hidden = false;
+  searchboxEl.hidden = false;
+  resultsEl.hidden = false;
+  await renderDashboard(dashboardEl, await loadCatalog(), () => void showOnboarding());
+}
 
 /**
  * Run one search interaction end-to-end: read the query, show progress,
@@ -67,3 +103,4 @@ queryEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") void onSearch();
 });
 prewarm();
+void (ratingCount() >= GATE ? showDashboard() : showOnboarding());

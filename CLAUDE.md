@@ -178,7 +178,8 @@ to justify the payload.
 5. **Onboarding + dashboard:** poster wall with ❤️/🥔/⏭️ (≥10, open ceiling),
    localStorage, live fold-in recs, top-3-genre picks with "because you
    rated" explanations, ❤️/🥔 on every dashboard card, "more like this"
-   CF-neighbor strip.
+   CF-neighbor strip. [Step 5 DONE: wall→gate→dashboard verified in-browser;
+   damped-mean fold-in (β=5) implemented per the binary-scale caveat.]
 6. **Blend mode + polish** (frontend-design pass) + final EVALUATION.md.
 7. **Publish:** repo public, Pages live, portfolio card, demo GIF.
 

@@ -111,3 +111,76 @@ body {
   text-align: center;
 }
 .credits a { color: var(--dim); }
+
+/* ---- onboarding wall ---- */
+.banner { width: 100%; border-radius: 14px; margin: 1rem 0 0.25rem; }
+.wall-hint { color: var(--dim); }
+.wall-progress {
+  display: flex; align-items: center; gap: 1rem;
+  margin: 0.5rem 0 1rem; min-height: 2.2rem;
+}
+#wall-count { font-weight: 600; }
+#wall-done {
+  padding: 0.5rem 1rem; border-radius: 10px; border: none;
+  background: var(--accent); color: white; cursor: pointer; font-size: 0.95rem;
+}
+.wall-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+}
+@media (max-width: 900px) { .wall-grid { grid-template-columns: repeat(3, 1fr); } }
+.wallcard { background: var(--panel); border-radius: 10px; overflow: hidden; }
+.wallcard img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+.wall-title {
+  font-size: 0.72rem; color: var(--dim); padding: 4px 6px 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wall-actions { display: flex; justify-content: space-around; padding: 4px 2px 6px; }
+.wall-actions button {
+  background: none; border: none; font-size: 1.05rem; cursor: pointer;
+  padding: 2px 6px; border-radius: 8px;
+}
+.wall-actions button:hover { background: #2a2a35; }
+
+/* ---- dashboard ---- */
+.dash-head { display: flex; align-items: baseline; justify-content: space-between; margin-top: 1.5rem; }
+.dash-head h2 { margin: 0; }
+.dash-tools button {
+  background: var(--panel); color: var(--text); border: 1px solid #33333f;
+  border-radius: 8px; padding: 0.35rem 0.7rem; cursor: pointer; margin-left: 0.4rem;
+  font-size: 0.85rem;
+}
+.picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 0.9rem; }
+@media (max-width: 700px) { .picks { grid-template-columns: 1fr; } }
+.pickcard { background: var(--panel); border-radius: 12px; overflow: hidden; }
+.pickcard.rated { opacity: 0.65; }
+.pick-label {
+  font-size: 0.75rem; color: var(--dim); text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 8px 10px 6px;
+}
+.pickcard img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+.pick-body { padding: 8px 10px 10px; }
+.pick-title { font-weight: 600; }
+.pick-why { color: var(--dim); font-size: 0.82rem; font-style: italic; margin-top: 2px; }
+.pick-actions { margin-top: 6px; display: flex; gap: 0.4rem; align-items: center; }
+.pick-actions button {
+  background: none; border: 1px solid #33333f; border-radius: 8px;
+  cursor: pointer; font-size: 0.95rem; padding: 3px 9px; color: var(--text);
+}
+.pick-actions button.chosen { border-color: var(--accent); }
+.pick-actions [data-act="more"] { font-size: 0.78rem; color: var(--dim); }
+
+/* ---- more-like-this strip ---- */
+.strip { margin-top: 1.4rem; }
+.strip h3 { font-weight: 500; font-size: 1rem; color: var(--dim); }
+.strip h3 em { color: var(--text); font-style: normal; font-weight: 600; }
+.strip-row {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(96px, 1fr);
+  gap: 10px; overflow-x: auto; padding-bottom: 6px;
+}
+.stripcard { margin: 0; }
+.stripcard img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px; display: block; }
+.stripcard figcaption {
+  font-size: 0.7rem; color: var(--dim); padding-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dim { color: var(--dim); }
