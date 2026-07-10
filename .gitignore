@@ -32,3 +32,6 @@ data/build/
 .cache/
 .playwright-mcp/
 .ipynb_checkpoints/
+
+# Wrangler local state
+worker/.wrangler/
