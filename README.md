@@ -1,6 +1,6 @@
 # movieBro 🎬🍿
 
-![movieBro — your movie bro, ready with the popcorn](docs/moviebro.png)
+![movieBro — your movie bro, ready with the popcorn](docs/hero.png)
 
 **Your movie bro.** Rate a few movies, and he learns your taste — then serves
 your next watch, one pick per favorite genre, plus a search bar that

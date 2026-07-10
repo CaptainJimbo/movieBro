@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./avatar.png" />
+    <title>movieBro 🎬 — your movie bro</title>
+  </head>
+  <body>
+    <header class="top">
+      <img class="logo" src="./avatar.png" alt="movieBro" width="44" height="44" />
+      <h1>movieBro</h1>
+      <span class="tagline">Not a critic. A bro.</span>
+    </header>
+
+    <section class="searchbox">
+      <input
+        id="query"
+        type="search"
+        placeholder='Try “mind-bending sci-fi”, “gritty crime thriller”, or a title…'
+        autocomplete="off"
+        autofocus
+      />
+      <button id="go">Search</button>
+    </section>
+
+    <div id="status" class="status" hidden></div>
+
+    <section id="results" class="grid" aria-live="polite"></section>
+
+    <div id="empty" class="empty" hidden>
+      <img src="./nores.png" alt="No results" width="240" />
+    </div>
+
+    <footer class="credits">
+      Data: <a href="https://grouplens.org/datasets/movielens/">MovieLens</a>
+      (research license) ·
+      <a href="https://www.themoviedb.org/">TMDB</a> — this product uses the
+      TMDB API but is not endorsed or certified by TMDB.
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

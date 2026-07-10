@@ -27,7 +27,19 @@ SAMPLE_SIZE = 100
 
 
 def load_top_movies(n: int) -> list[dict]:
-    """The n most-rated movies, joined with their TMDB ids."""
+    """Pick the n most-rated movies and join their TMDB ids.
+
+    Most-rated (via ratings.csv counts) guarantees well-known titles whose
+    TMDB records/posters certainly exist — the right sample for a
+    pipeline smoke test.
+
+    Args:
+        n: sample size (the step-1 gate uses 100).
+
+    Returns:
+        One dict per movie: movieId, title, genres (list), tmdbId (str or
+        None), numRatings — ordered most-rated first.
+    """
     with open(ML / "ratings.csv", newline="") as f:
         counts = Counter(row["movieId"] for row in csv.DictReader(f))
 
@@ -53,7 +65,21 @@ def load_top_movies(n: int) -> list[dict]:
 
 
 def enrich(movie: dict, api_key: str, session: requests.Session) -> dict | None:
-    """One TMDB call per movie: details + keywords + top cast."""
+    """Fetch one movie's TMDB enrichment in a single API call.
+
+    Uses append_to_response=keywords,credits so details, keywords and cast
+    arrive together (1 call per movie instead of 3).
+
+    Args:
+        movie: record from load_top_movies(); needs "tmdbId".
+        api_key: TMDB v3 API key.
+        session: shared requests.Session for connection reuse.
+
+    Returns:
+        The record extended with posterPath, overview, tagline, keywords
+        (<=15), cast (top 5), directors, tmdbTitle, year — or None when
+        tmdbId is missing or TMDB returns non-200.
+    """
     if not movie["tmdbId"]:
         return None
     r = session.get(
@@ -79,6 +105,18 @@ def enrich(movie: dict, api_key: str, session: requests.Session) -> dict | None:
 
 
 def render_grid(records: list[dict]) -> str:
+    """Render the enriched sample as a static HTML poster grid.
+
+    The step-1 gate artifact: posters hotlinked from TMDB's CDN, dark
+    background, responsive CSS grid. Records without a posterPath are
+    skipped.
+
+    Args:
+        records: enriched movie dicts (need posterPath + title).
+
+    Returns:
+        A complete standalone HTML document as a string.
+    """
     cards = "\n".join(
         f'<figure><img src="{POSTER_BASE}{r["posterPath"]}" loading="lazy" '
         f'alt="{r["title"]}"><figcaption>{r["title"]}</figcaption></figure>'
@@ -100,6 +138,15 @@ def render_grid(records: list[dict]) -> str:
 
 
 def main() -> int:
+    """Run the step-1 data gate: enrich 100 movies, write JSON + HTML grid.
+
+    Sequential with a small sleep (rate-limit courtesy); reports enrichment
+    success/failure counts and data-quality gaps (missing posters/
+    overviews, avg keywords) so the gate can be judged at a glance.
+
+    Returns:
+        Process exit code (0 on success, 1 if TMDB_API_KEY is missing).
+    """
     env = dotenv_values(ROOT / ".env")
     api_key = env.get("TMDB_API_KEY")
     if not api_key:

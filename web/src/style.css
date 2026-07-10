@@ -1,0 +1,113 @@
+/* movieBro — functional dark baseline; the frontend-design polish pass is
+   step 6, so keep this clean and unfussy. */
+
+:root {
+  --bg: #0e0e12;
+  --panel: #1a1a22;
+  --text: #ececf1;
+  --dim: #9a9aa8;
+  --accent: #e5484d;
+  --badge-dense: #4f8cf7;
+  --badge-bm25: #e5a33b;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0 auto;
+  max-width: 1080px;
+  padding: 1.5rem 1rem 3rem;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, sans-serif;
+}
+
+.top { display: flex; align-items: baseline; gap: 0.75rem; }
+.top .logo { border-radius: 10px; align-self: center; }
+.top h1 { margin: 0; font-size: 1.6rem; }
+.tagline { color: var(--dim); font-style: italic; }
+
+.searchbox { display: flex; gap: 0.5rem; margin: 1.25rem 0 0.75rem; }
+#query {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #33333f;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1rem;
+}
+#go {
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+#go:disabled { opacity: 0.5; cursor: wait; }
+
+.status { color: var(--dim); margin: 0.5rem 0; min-height: 1.2em; }
+.status .warn { color: var(--badge-bm25); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 1rem;
+}
+
+.card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel);
+  aspect-ratio: 2 / 3;
+}
+.card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card .noposter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 1rem;
+  text-align: center;
+  color: var(--dim);
+}
+
+/* provenance hover — the money-shot */
+.card .why {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 2.2rem 0.8rem 0.8rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.92) 40%);
+  opacity: 0;
+  transition: opacity 0.15s;
+  font-size: 0.82rem;
+}
+.card:hover .why, .card:focus-within .why { opacity: 1; }
+.why .title { font-weight: 600; margin-bottom: 0.3rem; }
+.why .snippet { color: #d5d5de; font-style: italic; }
+.why .badges { margin-top: 0.4rem; display: flex; gap: 0.35rem; }
+.badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  color: #0b0b0e;
+}
+.badge.dense { background: var(--badge-dense); }
+.badge.bm25 { background: var(--badge-bm25); }
+.badge.type { background: #3a3a48; color: var(--text); font-weight: 500; }
+
+.empty { text-align: center; padding: 2rem; }
+
+.credits {
+  margin-top: 3rem;
+  color: var(--dim);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.credits a { color: var(--dim); }

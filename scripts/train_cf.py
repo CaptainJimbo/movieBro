@@ -19,6 +19,17 @@ OUT = Path(__file__).resolve().parent.parent / "data" / "build"
 
 
 def main() -> int:
+    """Train the shipping neighbor model and write neighbors.json.
+
+    Unlike the eval (which trains on the 80% temporal split), this trains
+    on ALL ratings — the split exists only for measurement. Output format:
+    {"model", "beta", "k", "scoring", "neighbors": {movieId: [[neighborId,
+    sim], ...]}} with sims rounded to 4 decimals, minified. Prints
+    coverage/size stats to stderr.
+
+    Returns:
+        Process exit code (0 on success).
+    """
     users, items, ratings, _ = load_ratings()
     X, _, iids = build_matrix(users, items, ratings)
     print(f"training on all {len(ratings)} ratings | "

@@ -1,0 +1,15 @@
+# movieBro dense-search proxy — the ONLY server-side component.
+# Holds PINECONE_API_KEY as a Worker secret (never in browser JS); the
+# weekly cron keep-alive stops Pinecone's free tier pausing the index
+# after ~3 weeks of inactivity (see CLAUDE.md free-tier resilience).
+
+name = "moviebro-search"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+[vars]
+# Index host is addressing, not a secret; the key is what grants access.
+PINECONE_HOST = "https://moviebro-tltqztl.svc.aped-4627-b74a.pinecone.io"
+
+[triggers]
+crons = ["0 6 * * 1"] # Mondays 06:00 UTC — keep-alive ping

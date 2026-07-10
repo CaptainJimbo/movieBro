@@ -22,6 +22,17 @@ BETAS = [0, 5, 25, 100]
 
 
 def main() -> int:
+    """Run the full step-2 evaluation and print a markdown results table.
+
+    Pipeline: load ratings -> per-user temporal split -> build the train
+    matrix -> evaluate the two popularity baselines, then item-item CF
+    across the BETAS shrinkage grid x {normalized, unnormalized} fold-in.
+    Per-method progress goes to stderr; the final markdown table (for
+    EVALUATION.md) goes to stdout.
+
+    Returns:
+        Process exit code (0 on success).
+    """
     users, items, ratings, times = load_ratings()
     train_mask = temporal_split(users, items, ratings, times)
 
@@ -62,6 +73,11 @@ def main() -> int:
     rows = []
 
     def evaluate(score_fn, label):
+        """Score every eval user with score_fn, average HR@10/NDCG@10.
+
+        Appends (label, mean_hr, mean_ndcg) to the enclosing `rows` list
+        and echoes the line to stderr for live progress.
+        """
         hrs, ndcgs = [], []
         for u in eval_users:
             scores = score_fn(u)
@@ -75,11 +91,24 @@ def main() -> int:
               file=sys.stderr)
 
     def pop_scores(u):
+        """Baseline (a): rank candidates by global train-set rating count.
+
+        The user's already-rated movies are excluded (-inf), matching how
+        every other method is scored.
+        """
         s = pop.copy()
         s[list(train_by_user[u])] = -np.inf
         return s
 
     def genre_pop_scores(u):
+        """Baseline (b): popularity restricted to the user's top-3 genres.
+
+        The user's genres are ranked by rating-weighted counts over their
+        train ratings (mirroring the dashboard's top-3-genre inference);
+        any movie tagged with one of those genres outranks all others
+        (+1e6 offset), popularity ordering within each block. Rated
+        movies excluded.
+        """
         weight = Counter()
         for j, r in train_by_user[u].items():
             for g in genre_of.get(j, []):

@@ -25,7 +25,14 @@ REL_THRESHOLD = 4.0  # held-out rating >= this counts as "relevant"
 # ---------- data ----------
 
 def load_ratings() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """ratings.csv -> (user_idx, item_idx, rating, timestamp) plus id maps."""
+    """Load ratings.csv into parallel numpy arrays.
+
+    Returns:
+        (users, items, ratings, times) — four aligned arrays, one entry per
+        rating row: raw MovieLens userId, raw movieId, the 0.5–5.0 star
+        rating, and the unix timestamp. Ids are NOT remapped here; use
+        build_matrix() for contiguous indices.
+    """
     users, items, ratings, times = [], [], [], []
     with open(ML / "ratings.csv", newline="") as f:
         for row in csv.DictReader(f):
@@ -38,12 +45,34 @@ def load_ratings() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
 
 def load_genres() -> dict[int, list[str]]:
+    """Load movies.csv genre labels.
+
+    Returns:
+        Mapping of raw movieId -> list of genre strings (MovieLens's
+        pipe-separated field split apart; "(no genres listed)" comes
+        through as a literal single-element list).
+    """
     with open(ML / "movies.csv", newline="") as f:
         return {int(r["movieId"]): r["genres"].split("|") for r in csv.DictReader(f)}
 
 
 def temporal_split(users, items, ratings, times, test_frac=0.2):
-    """Per user: earliest (1-test_frac) -> train, latest test_frac -> test."""
+    """Split ratings chronologically PER USER (no global time cutoff).
+
+    Each user's ratings are sorted by timestamp; the earliest
+    (1 - test_frac) go to train and the latest test_frac to test. This
+    mimics the real deployment question — "given what a user rated so far,
+    predict what they rate next" — and prevents future->past leakage
+    within a user.
+
+    Args:
+        users/items/ratings/times: aligned arrays from load_ratings().
+        test_frac: fraction of each user's LATEST ratings held out.
+
+    Returns:
+        Boolean mask over the rating rows — True = train, False = test.
+        Every user keeps at least 1 training rating.
+    """
     train_mask = np.zeros(len(users), dtype=bool)
     order = np.lexsort((times, users))  # by user, then time
     start = 0
@@ -60,7 +89,19 @@ def temporal_split(users, items, ratings, times, test_frac=0.2):
 # ---------- training ----------
 
 def build_matrix(users, items, ratings):
-    """Sparse user x item matrix with contiguous index maps."""
+    """Build the sparse user x item rating matrix with contiguous indices.
+
+    Raw MovieLens ids are sparse (movieIds go to ~193k for 9.7k movies), so
+    rows/columns are remapped to dense 0..n-1 indices.
+
+    Args:
+        users/items/ratings: aligned arrays (a train subset is fine).
+
+    Returns:
+        (X, uids, iids): X is a scipy CSR matrix [n_users, n_items] of raw
+        star ratings; uids/iids are sorted arrays mapping matrix index ->
+        original MovieLens id (so iids[j] recovers the movieId of column j).
+    """
     uids = np.unique(users)
     iids = np.unique(items)
     umap = {u: k for k, u in enumerate(uids)}
@@ -73,7 +114,25 @@ def build_matrix(users, items, ratings):
 
 
 def train_item_item(X: sparse.csr_matrix, beta: float, top_k: int = TOP_K):
-    """-> (idx, sim): [n_items, top_k] neighbor indices and shrunk sims."""
+    """Train item-item similarities: adjusted cosine + support shrinkage.
+
+    Each rating is centered by its USER's mean (adjusted cosine, the best
+    variant in Sarwar et al. 2001), then item columns are compared by
+    cosine. Raw cosines are shrunk toward 0 by n/(n+beta), n = number of
+    co-raters — with 610 users, cosine over a handful of co-raters is
+    noise, and the eval shows beta wants to be large (~400; EVALUATION.md
+    finding 3). Per item, the top_k strongest-|sim| neighbors are kept.
+
+    Args:
+        X: CSR user x item rating matrix (from build_matrix()).
+        beta: shrinkage strength; 0 disables shrinkage.
+        top_k: neighbors kept per item.
+
+    Returns:
+        (nbr_idx, nbr_sim): int32 [n_items, top_k] neighbor column indices
+        (-1 padding where an item has fewer than top_k neighbors) and
+        float32 shrunk similarities (0.0 padding), sorted by |sim| desc.
+    """
     # center each user's ratings by their mean (adjusted cosine)
     counts = np.diff(X.indptr)
     means = np.divide(X.sum(axis=1).A1, counts,
@@ -109,12 +168,31 @@ def train_item_item(X: sparse.csr_matrix, beta: float, top_k: int = TOP_K):
 # ---------- fold-in scoring (mirrors the runtime) ----------
 
 def fold_in_scores(nbr_idx, nbr_sim, user_ratings, user_mean, n_items, normalize=True):
-    """Score ALL items for one user from their rated set.
+    """Score ALL items for one user by folding their ratings into the model.
 
-    For each candidate j: over (i, s) in j's own neighbor list with i rated:
-      acc_j = sum s * (r_ui - mean_u),  den_j = sum |s|
-    normalize=True -> acc/den (spec formula), else raw acc.
-    Rated items are excluded (set to -inf).
+    Mirrors the runtime exactly: for each candidate j, walk j's OWN
+    truncated top-K neighbor list and accumulate over the neighbors the
+    user has rated:
+
+        acc_j = sum sim(i,j) * (r_ui - user_mean)     (i rated by user)
+        den_j = sum |sim(i,j)|
+
+    normalize=True returns acc/den — a rating PREDICTION, which the eval
+    shows is catastrophic for top-N ranking (HR@10 0.42 -> 0.01,
+    EVALUATION.md finding 2). normalize=False returns the raw acc sum,
+    which is what ships. Kept switchable so the eval can report both.
+
+    Args:
+        nbr_idx, nbr_sim: neighbor arrays from train_item_item().
+        user_ratings: {item_index: star_rating} for this user's rated set.
+        user_mean: the user's mean rating (damped at runtime for +-1 data).
+        n_items: total item count (score vector length).
+        normalize: divide by den (True) or return the raw sum (False).
+
+    Returns:
+        Float array [n_items]; rated items and candidates with zero rated
+        neighbors are -inf (unrankable), everything else is the fold-in
+        score, higher = more recommended.
     """
     dev = np.zeros(n_items)
     rated = np.zeros(n_items, dtype=bool)
@@ -140,6 +218,20 @@ def fold_in_scores(nbr_idx, nbr_sim, user_ratings, user_mean, n_items, normalize
 # ---------- metrics ----------
 
 def hr_ndcg_at10(top10: np.ndarray, relevant: set[int]) -> tuple[float, float]:
+    """Compute hit-rate@10 and NDCG@10 for one user's ranked list.
+
+    Args:
+        top10: item indices of the user's top-10 recommendations, best first.
+        relevant: item indices of the user's held-out relevant items
+            (test ratings >= REL_THRESHOLD).
+
+    Returns:
+        (hr, ndcg): hr is 1.0 if ANY relevant item appears in the top-10,
+        else 0.0. ndcg uses binary relevance with the standard log2
+        discount, normalized by the ideal DCG for min(|relevant|, 10)
+        items — so a user with one relevant item can still score 1.0 by
+        ranking it first.
+    """
     hits = [1.0 if j in relevant else 0.0 for j in top10]
     hr = 1.0 if any(hits) else 0.0
     dcg = sum(h / np.log2(k + 2) for k, h in enumerate(hits))
