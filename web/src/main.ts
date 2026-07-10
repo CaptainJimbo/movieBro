@@ -9,6 +9,7 @@ import "./style.css";
 import { applyBlend, cfNudges, DEFAULT_ALPHA, type Nudge } from "./blend";
 import { loadCatalog } from "./data";
 import { renderDashboard } from "./dashboard";
+import { renderMyRatings } from "./myratings";
 import { loadNeighbors } from "./neighbors";
 import { getRatings, ratingCount } from "./ratings";
 import { search } from "./search";
@@ -23,6 +24,7 @@ const resultsEl = document.getElementById("results") as HTMLElement;
 const emptyEl = document.getElementById("empty") as HTMLElement;
 const onboardingEl = document.getElementById("onboarding") as HTMLElement;
 const dashboardEl = document.getElementById("dashboard") as HTMLElement;
+const myratingsEl = document.getElementById("myratings") as HTMLElement;
 const searchboxEl = document.getElementById("searchbox") as HTMLElement;
 
 const GATE = 10;
@@ -66,6 +68,7 @@ function renderBlended(): void {
  */
 async function showOnboarding(): Promise<void> {
   dashboardEl.hidden = true;
+  myratingsEl.hidden = true;
   searchboxEl.hidden = true;
   resultsEl.hidden = true;
   onboardingEl.hidden = false;
@@ -74,14 +77,30 @@ async function showOnboarding(): Promise<void> {
 
 /**
  * Show the dashboard view (wall hidden, search available below).
- * Re-renders picks from the current localStorage ratings.
+ * Re-renders picks from the current localStorage ratings — so edits
+ * made in "my ratings" are applied on the way back.
  */
 async function showDashboard(): Promise<void> {
   onboardingEl.hidden = true;
+  myratingsEl.hidden = true;
   dashboardEl.hidden = false;
   searchboxEl.hidden = false;
   resultsEl.hidden = false;
-  await renderDashboard(dashboardEl, await loadCatalog(), () => void showOnboarding());
+  await renderDashboard(dashboardEl, await loadCatalog(),
+    () => void showOnboarding(), () => void showMyRatings());
+}
+
+/**
+ * Show the ratings manager (amend/remove every ❤️/🥔). Search stays
+ * hidden to keep the view focused; back returns to the dashboard.
+ */
+async function showMyRatings(): Promise<void> {
+  onboardingEl.hidden = true;
+  dashboardEl.hidden = true;
+  searchboxEl.hidden = true;
+  resultsEl.hidden = true;
+  myratingsEl.hidden = false;
+  renderMyRatings(myratingsEl, await loadCatalog(), () => void showDashboard());
 }
 
 /**

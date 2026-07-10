@@ -219,3 +219,24 @@ body {
 .grid .card:nth-child(8) { animation-delay: 0.21s; }
 .grid .card:nth-child(9) { animation-delay: 0.24s; }
 .status img.mini { height: 1.1em; vertical-align: -0.2em; margin-right: 0.3em; }
+
+/* ---- my ratings view ---- */
+.raterow-heading { margin: 1.2rem 0 0.5rem; color: var(--dim); font-weight: 600; }
+.raterow {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.35rem 0.5rem; border-radius: 10px;
+}
+.raterow:hover { background: var(--panel); }
+.raterow img, .thumb-blank {
+  width: 34px; height: 51px; object-fit: cover; border-radius: 6px;
+  background: var(--panel); flex: none;
+}
+.raterow-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.raterow-actions { display: flex; gap: 0.3rem; flex: none; }
+.raterow-actions button {
+  background: none; border: 1px solid #33333f; border-radius: 8px;
+  cursor: pointer; font-size: 0.9rem; padding: 2px 8px; color: var(--text);
+  opacity: 0.55;
+}
+.raterow-actions button.chosen { opacity: 1; border-color: var(--accent); }
+.raterow-actions [data-act="remove"]:hover { border-color: #a33; color: #f0a3a3; }

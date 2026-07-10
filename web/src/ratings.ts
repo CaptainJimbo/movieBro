@@ -40,6 +40,18 @@ export function setRating(movieId: number, value: 1 | -1): void {
 }
 
 /**
+ * Remove one rating entirely (the movie becomes unrated: eligible for
+ * recommendations again, no fold-in signal).
+ *
+ * @param movieId - the movie to forget.
+ */
+export function removeRating(movieId: number): void {
+  const r = getRatings();
+  delete r[movieId];
+  localStorage.setItem(RATINGS_KEY, JSON.stringify(r));
+}
+
+/**
  * Count real reactions (❤️/🥔 — the onboarding gate currency; skips
  * never count).
  *

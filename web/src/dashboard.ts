@@ -21,11 +21,13 @@ const STRIP_SIZE = 8;
  * @param container - the #dashboard element.
  * @param movies - full catalog.
  * @param onRateMore - navigates back to the onboarding wall.
+ * @param onMyRatings - navigates to the ratings manager view.
  */
 export async function renderDashboard(
   container: HTMLElement,
   movies: Movie[],
   onRateMore: () => void,
+  onMyRatings: () => void,
 ): Promise<void> {
   container.innerHTML = `<p class="dim">crunching your taste…</p>`;
   const neighbors = await loadNeighbors();
@@ -38,14 +40,16 @@ export async function renderDashboard(
       <span class="dash-tools">
         <button id="refresh-picks" title="re-run recommendations with your latest ratings">↻ refresh picks</button>
         <button id="rate-more">＋ rate more movies</button>
+        <button id="my-ratings">❤️ my ratings</button>
       </span>
     </div>
     <div class="picks" id="picks"></div>
     <div class="strip" id="strip" hidden></div>`;
 
   container.querySelector("#rate-more")!.addEventListener("click", onRateMore);
+  container.querySelector("#my-ratings")!.addEventListener("click", onMyRatings);
   container.querySelector("#refresh-picks")!.addEventListener("click", () => {
-    void renderDashboard(container, movies, onRateMore);
+    void renderDashboard(container, movies, onRateMore, onMyRatings);
   });
 
   const picksEl = container.querySelector<HTMLElement>("#picks")!;
