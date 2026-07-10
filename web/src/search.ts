@@ -1,8 +1,6 @@
 /**
- * Search orchestrator: runs both legs, fuses, groups, reports mode.
- *
- * Step-4 note: the cross-encoder rerank slots in after groupToParents()
- * (top-20 pool) before the grid slice.
+ * Search orchestrator: runs both legs, fuses, groups, reranks, reports
+ * mode. Rerank failures degrade to fusion order (never a dead search).
  */
 
 import { buildBm25, searchBm25, type Bm25Index } from "./bm25";
@@ -65,6 +63,18 @@ export async function search(query: string): Promise<SearchOutcome> {
     mode = "bm25-only";
   }
 
-  const results = groupToParents(rrfFuse(denseHits, bm25Hits), children, movies);
+  let results = groupToParents(rrfFuse(denseHits, bm25Hits), children, movies);
+
+  try {
+    // dynamic import: the cross-encoder (~23 MB) loads on first use only
+    const { rerank, buildDocParts } = await import("./rerank");
+    docPartsCache ??= buildDocParts(children);
+    results = await rerank(query, results, docPartsCache);
+  } catch (e) {
+    console.warn("rerank unavailable, keeping fusion order:", e);
+  }
+
   return { results, mode };
 }
+
+let docPartsCache: Map<number, string> | null = null;

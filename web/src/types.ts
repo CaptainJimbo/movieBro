@@ -53,4 +53,6 @@ export interface SearchResult {
   bestChild: Child;
   /** Which legs contributed this movie's best child. */
   legs: { dense: boolean; bm25: boolean };
+  /** Cross-encoder logit, set once step-4 rerank has run (blend input). */
+  rerankScore?: number;
 }

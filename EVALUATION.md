@@ -92,14 +92,86 @@ Fight Club — the "because you rated X, Y" explanations will be sane.
   mean (ū = Σr/(n+β), β≈5) so one-sided raters keep a signal. The offline
   eval uses true 5-star means — this gap is real and unmeasured offline.
 
-## 2. Search: hybrid retrieval (pending — step 3/4)
+## 2. Search: hybrid retrieval + rerank
 
-Golden set of ~50 hand-written queries (exact-title / actor-ish / vibe /
-constraint), graded relevant movies, recall@9 and MRR per leg: dense-only,
-BM25-only, fused (RRF k=60), fused + cross-encoder rerank. Optional
-convex-combination fusion row (Bruch et al. 2023). Blend mode is
-deliberately **not** evaluated against the golden set — it perturbs query
-relevance by design; the debug panel's side-by-side is its demonstration.
+**Question:** does each pipeline stage — fusion, then rerank — actually
+improve retrieval, or is it architecture theater?
+
+### Protocol
+
+- **Golden set:** 51 hand-written queries (`data/golden-queries.json`),
+  four types: exact-title (12), actor/director-ish (12), vibe (15),
+  constraint (12). Graded relevance (2 = exactly it, 1 = clearly
+  relevant), judged by the author — a known bias, stated plainly.
+- **Metrics @9** (the grid the user sees): recall@9 =
+  |top-9 ∩ relevant| / min(|relevant|, 9); MRR@9; NDCG@9 with graded gains.
+- **Pipelines:** dense-only (bge-small → Pinecone), BM25-only (k1=1.2,
+  b=0.75, Lucene IDF floor), fused (RRF k=60, best-hit grouping), fused +
+  cross-encoder rerank (ms-marco-MiniLM-L-6-v2) on the top-20.
+- **Fidelity:** the Python harness (`scripts/eval_search.py`) mirrors the
+  browser implementation constant-for-constant; dense queries hit Pinecone
+  directly (the Worker adds no logic). The harness uses the PyTorch
+  cross-encoder vs the browser's quantized ONNX — orderings agree; exact
+  logits may differ in trailing decimals.
+
+### Results (51 queries)
+
+| Pipeline | recall@9 | MRR@9 | NDCG@9 |
+|---|---|---|---|
+| dense-only | 0.4254 | 0.4745 | 0.3781 |
+| bm25-only | 0.4324 | 0.4654 | 0.3874 |
+| fused (RRF k=60) | 0.4526 | 0.4951 | 0.4081 |
+| **fused + rerank (shipped)** | **0.4937** | **0.6011** | **0.4605** |
+
+Per query type, shipped pipeline:
+
+| Type | n | recall@9 | MRR@9 | NDCG@9 |
+|---|---|---|---|---|
+| exact-title | 12 | 0.9792 | 0.9375 | 0.9114 |
+| actor-ish | 12 | 0.5705 | 0.6486 | 0.4968 |
+| vibe | 15 | 0.2102 | 0.4833 | 0.2562 |
+| constraint | 12 | 0.2857 | 0.3646 | 0.2286 |
+
+### Findings
+
+1. **Every stage buys something.** Fusion beats either leg alone on all
+   three metrics (the two legs are genuinely complementary), and rerank
+   on top of fusion adds +9% recall@9, **+21% MRR@9** (0.495 → 0.601) and
+   +13% NDCG@9. The pipeline is not theater.
+2. **The rerank document must carry the evidence retrieval matched on.**
+   First attempt fed the cross-encoder title+overview only, and rerank
+   made things WORSE (recall@9 0.453 → 0.405): actor/constraint hits found
+   via cast/keyword children got demoted by a model that couldn't see
+   cast or keywords. Adding those to the rerank doc flipped it to the
+   shipped numbers (actor recall@9 0.25 → 0.57). Same lesson as the CF
+   normalization bug: the eval catches what the architecture diagram
+   can't.
+3. **Query types are not equally hard.** Exact-title is essentially
+   solved (0.98 recall@9 — the dedicated title child earns its place).
+   Vibe/constraint recall looks low partly by construction: those golden
+   sets list up to 11 relevant movies and only 9 slots exist; MRR (a
+   "did something relevant rank high" measure) tells the fairer story
+   (0.48 / 0.36). Still, constraint queries ("black and white courtroom
+   classic") are the real weakness — attribute filtering (year, era,
+   studio) is a structured-search problem this pipeline only
+   approximates. Stated as-is; a v2 could add metadata filters.
+4. MRR@9 for a random-order baseline over these candidate pools would be
+   far below any row here; the absolute numbers are modest because the
+   catalog is 9.7k movies and the golden judgments are strict.
+
+### Known limitations
+
+- Author-judged relevance (n=1 judge); no inter-annotator agreement.
+- 51 queries — enough to rank pipeline variants, not to resolve
+  single-digit-percent differences.
+- The golden set was consulted (once) to fix the rerank document — a
+  legitimate pipeline repair, but it means the set is no longer fully
+  held-out for that one decision. Fresh queries would be needed to
+  re-confirm it.
+- Blend mode is deliberately NOT evaluated against this set — it perturbs
+  query relevance by design; the debug panel's search-only vs blended
+  side-by-side is its demonstration (no offline ground truth exists
+  without user studies).
 
 ---
 

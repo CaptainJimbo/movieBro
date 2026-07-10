@@ -173,6 +173,8 @@ to justify the payload.
    grouping in browser — search bar returns the 3×3 grid. Provenance hover.
    (Cloudflare Worker proxy holding `PINECONE_API_KEY` stands up here.)
 4. **Rerank:** cross-encoder on top-20; eval table gets the +rerank column.
+   [Step 4 DONE: rerank doc must include cast+keywords (title+overview-only
+   made rerank WORSE); fused+rerank MRR@9 0.60 vs 0.50 fused. EVALUATION.md §2.]
 5. **Onboarding + dashboard:** poster wall with ❤️/🥔/⏭️ (≥10, open ceiling),
    localStorage, live fold-in recs, top-3-genre picks with "because you
    rated" explanations, ❤️/🥔 on every dashboard card, "more like this"
