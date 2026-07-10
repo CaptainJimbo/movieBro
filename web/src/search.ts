@@ -4,7 +4,7 @@
  */
 
 import { buildBm25, searchBm25, type Bm25Index } from "./bm25";
-import { LEG_TOP_K } from "./config";
+import { LEG_TOP_K, RERANK_MIN_LOGIT } from "./config";
 import { byId, loadCatalog, loadChildren } from "./data";
 import { searchDense } from "./dense";
 import { groupToParents, rrfFuse } from "./fuse";
@@ -70,6 +70,14 @@ export async function search(query: string): Promise<SearchOutcome> {
     const { rerank, buildDocParts } = await import("./rerank");
     docPartsCache ??= buildDocParts(children);
     results = await rerank(query, results, docPartsCache);
+    // no-answer gate: the cross-encoder is the only calibrated confidence
+    // signal in the pipeline — drop what it calls irrelevant; an empty
+    // survivor list renders the sad-potato state instead of a grid of
+    // confidently-presented noise (dense ALWAYS returns nearest vectors,
+    // even for gibberish).
+    results = results.filter(
+      (r) => r.rerankScore !== undefined && r.rerankScore >= RERANK_MIN_LOGIT,
+    );
   } catch (e) {
     console.warn("rerank unavailable, keeping fusion order:", e);
   }

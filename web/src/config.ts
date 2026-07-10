@@ -21,6 +21,16 @@ export const GROUP_TOP_N = 20;
 /** Results displayed in the grid (3x3). */
 export const GRID_SIZE = 9;
 
+/**
+ * No-answer gate: results whose cross-encoder logit falls below this are
+ * dropped (none left → the sad-potato empty state). Calibrated
+ * empirically: gibberish/no-answer queries max out ≈ −11 while even
+ * soft vibe matches score ≥ −2, so −8 sits safely in the dead zone.
+ * Applied only when rerank ran — without it there is no calibrated
+ * confidence signal to gate on.
+ */
+export const RERANK_MIN_LOGIT = -8;
+
 /** bge-small query prefix — queries get it, passages never do. */
 export const BGE_QUERY_PREFIX =
   "Represent this sentence for searching relevant passages: ";

@@ -158,6 +158,13 @@ Per query type, shipped pipeline:
 4. MRR@9 for a random-order baseline over these candidate pools would be
    far below any row here; the absolute numbers are modest because the
    catalog is 9.7k movies and the golden judgments are strict.
+5. **No-answer gate:** dense retrieval always returns the nearest
+   vectors, even for gibberish — so the runtime drops candidates whose
+   cross-encoder logit is below −8 (empty survivors → "no results").
+   Calibrated empirically: gibberish and genuinely unanswerable queries
+   max out at ≈ −11 while even soft vibe matches score ≥ −2, leaving a
+   wide dead zone. The cross-encoder is the pipeline's only calibrated
+   confidence signal; raw cosine thresholds are unreliable for this.
 
 ### Known limitations
 
