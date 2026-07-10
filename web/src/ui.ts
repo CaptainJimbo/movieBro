@@ -96,7 +96,7 @@ export function searchStatus(n: number, mode: SearchMode, alpha = 0): string {
       : "";
   const blended =
     alpha > 0 ? ` <span class="blend-badge">✦ blended with your taste (α=${alpha.toFixed(2)})</span>` : "";
-  return n === 0 ? "" : `${n} matches${blended}${degraded}`;
+  return n === 0 ? "" : `${n} ${n === 1 ? "match" : "matches"}${blended}${degraded}`;
 }
 
 /**
