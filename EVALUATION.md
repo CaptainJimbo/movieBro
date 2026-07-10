@@ -173,6 +173,41 @@ Per query type, shipped pipeline:
   side-by-side is its demonstration (no offline ground truth exists
   without user studies).
 
+## 3. Blend mode (demonstrated, deliberately not offline-evaluated)
+
+Blend re-orders the ~20 reranked search candidates by
+`final = (1−α)·sigmoid(rerank/τ_rel) + α·sigmoid(cf/τ_cf)` — a convex
+combination (Bruch et al. 2023: the robust single-parameter fusion when
+you can't train a ranker). CF-silent candidates sit at exactly 0.5
+(never penalized); pre-onboarding forces α=0.
+
+**Why no table:** blend perturbs query-relevance *by design*, so scoring
+it against the section-2 golden set can only show a decrease — that
+number would measure the wrong thing. Personalized-search quality has no
+offline ground truth here (it would need user studies / interaction
+logs). The demonstration is the debug panel: drag α from 0 to 1 on a
+live query and watch the same 20 movies re-order from "pure relevance"
+to "pure taste", each boosted card explaining itself ("▲ because you ❤️
+The Shawshank Redemption, The Matrix").
+
+**Calibration (both caught empirically):**
+- τ_cf = 0.05 — unnormalized fold-in scores at ~14 ratings have
+  p90 ≈ 0.02, max ≈ 0.17; τ_cf maps strong signals to sigmoid ≈ 0.9,
+  noise to ≈ 0.5.
+- τ_rel = 2.5 — ms-marco logits span roughly ±10, and a raw sigmoid
+  saturates every good result at ≈ 1.0. First live test showed α=0.15
+  ordering identically to α=1.0: relevance differences had been erased
+  and taste silently took over. The temperature restores a smooth
+  α-gradient (verified: α 0 / 0.15 / 0.5 / 1.0 produce progressively
+  taste-leaning orders). Third instance of the pattern: the spec's
+  formula looked right and measurement said otherwise.
+
+**Honest upgrade path:** the textbook-best blend is learning-to-rank
+with the CF score as a feature (LambdaMART or a learned re-ranker).
+Deferred: it requires click/relevance labels this demo does not collect
+— the Worker is a stateless proxy that logs nothing, and ratings never
+leave the device.
+
 ---
 
 *Citations: Sarwar et al. 2001 (item-based CF); Cormack et al. 2009 (RRF);

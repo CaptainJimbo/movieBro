@@ -6,10 +6,13 @@
 
 import "./style.css";
 
+import { applyBlend, cfNudges, DEFAULT_ALPHA, type Nudge } from "./blend";
 import { loadCatalog } from "./data";
 import { renderDashboard } from "./dashboard";
-import { ratingCount } from "./ratings";
+import { loadNeighbors } from "./neighbors";
+import { getRatings, ratingCount } from "./ratings";
 import { search } from "./search";
+import type { SearchResult } from "./types";
 import { renderGrid, searchStatus, setStatus } from "./ui";
 import { renderWall } from "./wall";
 
@@ -24,6 +27,38 @@ const searchboxEl = document.getElementById("searchbox") as HTMLElement;
 
 const GATE = 10;
 let busy = false;
+
+const debugEl = document.getElementById("debug") as HTMLDetailsElement;
+const alphaEl = document.getElementById("alpha") as HTMLInputElement;
+const alphaOut = document.getElementById("alpha-out") as HTMLOutputElement;
+
+/** Last search, kept so the α slider can re-blend without re-searching. */
+let lastResults: SearchResult[] = [];
+let lastNudges: Map<number, Nudge> = new Map();
+let lastMode: Parameters<typeof searchStatus>[1] = "hybrid";
+
+/**
+ * Current blend weight. Pre-onboarding (no ratings) the blend is forced
+ * OFF (α=0, pure search) regardless of the slider — there is no taste
+ * signal to apply.
+ */
+function currentAlpha(): number {
+  return ratingCount() === 0 ? 0 : Number(alphaEl.value);
+}
+
+/**
+ * Blend (or re-blend) the cached results at the current α and render.
+ * Called after every search and on every slider move — the live
+ * reorder IS the blend demonstration (no offline ground truth exists;
+ * see EVALUATION.md §3).
+ */
+function renderBlended(): void {
+  const alpha = currentAlpha();
+  const shown = applyBlend(lastResults, lastNudges, alpha);
+  renderGrid(resultsEl, shown, alpha > 0 ? lastNudges : undefined);
+  setStatus(statusEl, searchStatus(shown.length, lastMode, alpha));
+  emptyEl.hidden = shown.length > 0;
+}
 
 /**
  * Show the onboarding wall view (dashboard + search hidden).
@@ -67,9 +102,20 @@ async function onSearch(): Promise<void> {
 
   try {
     const { results, mode } = await search(query);
-    renderGrid(resultsEl, results);
-    setStatus(statusEl, searchStatus(results.length, mode));
-    emptyEl.hidden = results.length > 0;
+    lastResults = results;
+    lastMode = mode;
+    lastNudges = new Map();
+    if (ratingCount() > 0 && results.length > 0) {
+      try {
+        const [neighbors, catalog] = await Promise.all([loadNeighbors(), loadCatalog()]);
+        const titleOf = new Map(catalog.map((m) => [m.id, m.title]));
+        lastNudges = cfNudges(results, neighbors, getRatings(), titleOf);
+      } catch (e) {
+        console.warn("blend unavailable (neighbors failed to load):", e);
+      }
+    }
+    debugEl.hidden = ratingCount() === 0;
+    renderBlended();
   } catch (e) {
     console.error(e);
     setStatus(statusEl, `<span class="warn">search failed — try again</span>`);
@@ -87,11 +133,12 @@ async function onSearch(): Promise<void> {
  * (BM25-only) without the model.
  */
 function prewarm(): void {
-  setStatus(statusEl, "warming up semantic search…");
+  const popcorn = `<img class="mini" src="${import.meta.env.BASE_URL}popcorn.png" alt="" />`;
+  setStatus(statusEl, `${popcorn} warming up semantic search…`);
   import("./embed")
     .then(({ getExtractor }) =>
       getExtractor((frac) =>
-        setStatus(statusEl, `loading embedding model… ${Math.round(frac * 100)}%`),
+        setStatus(statusEl, `${popcorn} loading embedding model… ${Math.round(frac * 100)}%`),
       ),
     )
     .then(() => setStatus(statusEl, ""))
@@ -101,6 +148,11 @@ function prewarm(): void {
 goEl.addEventListener("click", onSearch);
 queryEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") void onSearch();
+});
+alphaEl.value = String(DEFAULT_ALPHA);
+alphaEl.addEventListener("input", () => {
+  alphaOut.textContent = Number(alphaEl.value).toFixed(2);
+  if (lastResults.length > 0) renderBlended();
 });
 prewarm();
 void (ratingCount() >= GATE ? showDashboard() : showOnboarding());

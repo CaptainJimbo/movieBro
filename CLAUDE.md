@@ -115,10 +115,12 @@ pause policy against current Pinecone docs when the Worker stands up (step 3).
   Applied **after rerank**, re-ordering ONLY the ~20 search candidates —
   never injects CF-only movies (the query still decides relevance; CF only
   nudges order). Formula is a **convex combination** of normalized scores:
-  `final = (1−α)·sigmoid(rerank) + α·sigmoid(cf/τ)`. Sigmoid (not min-max) →
-  fixed scale, and **cf=0 → 0.5 = neutral**; cf is the UNNORMALIZED fold-in
-  score, so its spread grows with ratings count — τ (temperature) calibrated
-  at step 6 so typical scores land in sigmoid's active range. **α = slider** (debug panel),
+  `final = (1−α)·sigmoid(rerank/τ_rel) + α·sigmoid(cf/τ_cf)`. Sigmoid (not
+  min-max) → fixed scale, and **cf=0 → 0.5 = neutral**; cf is the
+  UNNORMALIZED fold-in score. BOTH sides need temperatures (step-6 finding):
+  τ_cf=0.05 (fold-in spread at ~14 ratings), τ_rel=2.5 — raw sigmoid over
+  ±10 ms-marco logits saturates at 1.0 and lets even α=0.15 order like
+  α=1.0 (EVALUATION.md §3). **α = slider** (debug panel),
   default small (~0.15); **CF-silent candidate (no rated neighbors) → 0.5,
   never penalized**; **pre-onboarding → α=0** (pure search). Provenance hover
   shows the nudge ("▲ because you ❤️ Heat, Sicario"). Label it visibly.
@@ -181,6 +183,10 @@ to justify the payload.
    CF-neighbor strip. [Step 5 DONE: wall→gate→dashboard verified in-browser;
    damped-mean fold-in (β=5) implemented per the binary-scale caveat.]
 6. **Blend mode + polish** (frontend-design pass) + final EVALUATION.md.
+   [Step 6 DONE: blend live with α slider + nudge provenance; τ_rel
+   saturation caught in live test; EVALUATION.md §3 written. A deeper
+   distinctive-design pass with the frontend-design plugin remains
+   optional pre-launch polish.]
 7. **Publish:** repo public, Pages live, portfolio card, demo GIF.
 
 ## Performance budgets

@@ -184,3 +184,38 @@ body {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .dim { color: var(--dim); }
+
+/* ---- blend debug panel + nudge provenance ---- */
+.debug {
+  margin: 0.4rem 0;
+  border: 1px solid #33333f;
+  border-radius: 10px;
+  background: var(--panel);
+  font-size: 0.85rem;
+}
+.debug summary { padding: 0.5rem 0.9rem; cursor: pointer; color: var(--dim); }
+.debug[open] summary { color: var(--text); }
+.debug-body { padding: 0 0.9rem 0.8rem; }
+.debug-body label { display: block; margin-bottom: 0.3rem; }
+.debug-body output { font-weight: 700; color: var(--accent); }
+.debug-body input[type="range"] { width: 100%; accent-color: var(--accent); }
+.debug-note { color: var(--dim); font-size: 0.78rem; margin: 0.4rem 0 0; }
+.nudge { margin-top: 0.35rem; font-size: 0.78rem; font-weight: 600; }
+.nudge.up { color: #6ee7a0; }
+.nudge.down { color: #f0a3a3; }
+.blend-badge { color: #c9a7f5; }
+
+/* ---- polish: motion + loading personality ---- */
+.card { transition: transform 0.15s ease; }
+.card:hover { transform: scale(1.02); }
+@keyframes cardIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+.grid .card { animation: cardIn 0.25s ease both; }
+.grid .card:nth-child(2) { animation-delay: 0.03s; }
+.grid .card:nth-child(3) { animation-delay: 0.06s; }
+.grid .card:nth-child(4) { animation-delay: 0.09s; }
+.grid .card:nth-child(5) { animation-delay: 0.12s; }
+.grid .card:nth-child(6) { animation-delay: 0.15s; }
+.grid .card:nth-child(7) { animation-delay: 0.18s; }
+.grid .card:nth-child(8) { animation-delay: 0.21s; }
+.grid .card:nth-child(9) { animation-delay: 0.24s; }
+.status img.mini { height: 1.1em; vertical-align: -0.2em; margin-right: 0.3em; }

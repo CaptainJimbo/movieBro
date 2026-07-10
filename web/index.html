@@ -28,6 +28,17 @@
       <button id="go">Search</button>
     </section>
 
+    <details id="debug" class="debug" hidden>
+      <summary>⚙ blend: search that knows your taste</summary>
+      <div class="debug-body">
+        <label for="alpha">taste weight α <output id="alpha-out">0.15</output></label>
+        <input type="range" id="alpha" min="0" max="1" step="0.05" value="0.15" />
+        <p class="debug-note">0 = pure search relevance · 1 = pure taste.
+        Drag while results are shown — the grid re-orders live. The same
+        movies always answer the query; only <em>your</em> order changes.</p>
+      </div>
+    </details>
+
     <div id="status" class="status" hidden></div>
 
     <section id="results" class="grid" aria-live="polite"></section>

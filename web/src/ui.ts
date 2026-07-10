@@ -1,5 +1,6 @@
 /** DOM rendering: the 3x3 grid, provenance hovers, and status line. */
 
+import type { Nudge } from "./blend";
 import { GRID_SIZE, POSTER_BASE } from "./config";
 import type { SearchMode } from "./search";
 import type { SearchResult } from "./types";
@@ -19,13 +20,20 @@ const TYPE_LABEL: Record<string, string> = {
  *
  * Each card: poster (or a titled placeholder for the ~1% unenriched),
  * and a hover overlay showing WHY it matched — the best child snippet,
- * its type, and D/B leg badges. Provenance is the product's money-shot;
- * never render a bare poster without its "why".
+ * its type, D/B leg badges, and (when blend is active) the personal
+ * nudge line ("▲ because you ❤️ X, Y"). Provenance is the product's
+ * money-shot; never render a bare poster without its "why".
  *
  * @param container - the #results grid element.
  * @param results - grouped results (only the first GRID_SIZE render).
+ * @param nudges - optional CF nudges for blend provenance (movieId
+ *   keyed; absent entry = CF-silent, no line shown).
  */
-export function renderGrid(container: HTMLElement, results: SearchResult[]): void {
+export function renderGrid(
+  container: HTMLElement,
+  results: SearchResult[],
+  nudges?: Map<number, Nudge>,
+): void {
   container.innerHTML = "";
   for (const r of results.slice(0, GRID_SIZE)) {
     const card = document.createElement("article");
@@ -42,11 +50,19 @@ export function renderGrid(container: HTMLElement, results: SearchResult[]): voi
       `<span class="badge type">${TYPE_LABEL[r.bestChild.type] ?? r.bestChild.type}</span>`,
     ].join("");
 
+    const nudge = nudges?.get(r.movie.id);
+    const nudgeLine = nudge
+      ? nudge.cf > 0
+        ? `<div class="nudge up">▲ your taste${nudge.because.length ? `: because you ❤️ ${escapeHtml(nudge.because.join(", "))}` : ""}</div>`
+        : `<div class="nudge down">▼ your taste rates this lower</div>`
+      : "";
+
     card.innerHTML = `
       ${poster}
       <div class="why">
         <div class="title">${escapeHtml(r.movie.title)}${r.movie.year ? ` (${r.movie.year})` : ""}</div>
         <div class="snippet">“${escapeHtml(truncate(r.bestChild.text, 140))}”</div>
+        ${nudgeLine}
         <div class="badges">${badges}</div>
       </div>`;
     container.appendChild(card);
@@ -65,18 +81,22 @@ export function setStatus(el: HTMLElement, html: string): void {
 }
 
 /**
- * Compose the post-search status: result count + retrieval-mode badge.
+ * Compose the post-search status: result count, retrieval-mode badge,
+ * and the blend label (spec: label it visibly whenever taste is applied).
  *
  * @param n - number of results shown.
  * @param mode - which legs actually ran.
+ * @param alpha - current blend weight (0 = pure search, unlabeled).
  * @returns Status HTML ("" when nothing special to say).
  */
-export function searchStatus(n: number, mode: SearchMode): string {
+export function searchStatus(n: number, mode: SearchMode, alpha = 0): string {
   const degraded =
     mode === "bm25-only"
       ? ` <span class="warn">⚠ lexical-only mode (semantic search unreachable)</span>`
       : "";
-  return n === 0 ? "" : `${n} matches${degraded}`;
+  const blended =
+    alpha > 0 ? ` <span class="blend-badge">✦ blended with your taste (α=${alpha.toFixed(2)})</span>` : "";
+  return n === 0 ? "" : `${n} matches${blended}${degraded}`;
 }
 
 /**
