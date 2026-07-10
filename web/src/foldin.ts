@@ -110,6 +110,61 @@ export function topGenres(movies: Map<number, Movie>, ratings: Ratings): string[
 }
 
 /**
+ * Build a Pick (movie + score + provenance) from a fold-in entry.
+ *
+ * @param movie - the candidate movie.
+ * @param s - its foldIn() score record.
+ * @param byId - catalog lookup for contributor titles.
+ * @returns The assembled Pick.
+ */
+function toPick(
+  movie: Movie,
+  s: { score: number; contributors: [number, number][] },
+  byId: Map<number, Movie>,
+): Pick {
+  return {
+    movie,
+    score: s.score,
+    because: s.contributors.slice(0, 2)
+      .map(([id]) => byId.get(id))
+      .filter((x): x is Movie => !!x),
+  };
+}
+
+/**
+ * The next best fold-in candidate for ONE genre, excluding given ids —
+ * used when a dashboard pick is rated and only that genre bin should
+ * refresh (recomputed with the latest ratings, so the just-given ❤️/🥔
+ * immediately shapes the replacement).
+ *
+ * @param genre - the genre bin to refill.
+ * @param movies - full catalog.
+ * @param neighbors - the CF model.
+ * @param ratings - the user's current ❤️/🥔 map.
+ * @param exclude - movieIds already on screen (or otherwise unwanted).
+ * @returns The replacement Pick, or null when the genre has no more
+ *   positive-score candidates.
+ */
+export function nextPickForGenre(
+  genre: string,
+  movies: Movie[],
+  neighbors: NeighborMap,
+  ratings: Ratings,
+  exclude: Set<number>,
+): Pick | null {
+  const byId = new Map(movies.map((m) => [m.id, m]));
+  const scores = foldIn(movies, neighbors, ratings);
+  let best: [Movie, { score: number; contributors: [number, number][] }] | null = null;
+  for (const [mid, s] of scores) {
+    if (s.score <= 0 || exclude.has(mid)) continue;
+    const m = byId.get(mid);
+    if (!m || !m.genres.includes(genre)) continue;
+    if (!best || s.score > best[1].score) best = [m, s];
+  }
+  return best ? toPick(best[0], best[1], byId) : null;
+}
+
+/**
  * The dashboard picks: one best fold-in candidate per top genre, each
  * with its "because you ❤️ X, Y" provenance (top 2 contributors).
  *
@@ -135,13 +190,7 @@ export function genrePicks(
       const m = byId.get(mid);
       if (!m || used.has(mid) || !m.genres.includes(genre) || s.score <= 0) continue;
       used.add(mid);
-      picks.push([genre, {
-        movie: m,
-        score: s.score,
-        because: s.contributors.slice(0, 2)
-          .map(([id]) => byId.get(id))
-          .filter((x): x is Movie => !!x),
-      }]);
+      picks.push([genre, toPick(m, s, byId)]);
       break;
     }
   }

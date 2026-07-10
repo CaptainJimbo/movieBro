@@ -8,7 +8,7 @@
  */
 
 import { POSTER_BASE } from "./config";
-import { genrePicks } from "./foldin";
+import { genrePicks, nextPickForGenre, type Pick } from "./foldin";
 import { loadNeighbors, type NeighborMap } from "./neighbors";
 import { getRatings, setRating } from "./ratings";
 import type { Movie } from "./types";
@@ -57,7 +57,15 @@ export async function renderDashboard(
     return;
   }
 
-  for (const [genre, pick] of picks) {
+  /** Movie ids currently displayed as picks (replacements must differ). */
+  const onScreen = new Set(picks.map(([, p]) => p.movie.id));
+
+  /**
+   * Build one pick card. Rating it swaps ONLY this genre bin: the fold-in
+   * reruns with the fresh rating and the next best candidate in the same
+   * genre slides in (other bins untouched — no global reshuffle).
+   */
+  function makePickCard(genre: string, pick: Pick): HTMLElement {
     const m = pick.movie;
     const because = pick.because.map((b) => b.title).join(", ");
     const card = document.createElement("article");
@@ -84,13 +92,21 @@ export async function renderDashboard(
           return;
         }
         setRating(m.id, act === "love" ? 1 : -1);
-        card.classList.add("rated");
-        b.classList.add("chosen");
-        // picks intentionally do NOT reshuffle now — refresh applies it
+        onScreen.delete(m.id); // rated movies are excluded by fold-in anyway
+        const next = nextPickForGenre(genre, movies, neighbors, getRatings(), onScreen);
+        if (next) {
+          onScreen.add(next.movie.id);
+          card.replaceWith(makePickCard(genre, next));
+        } else {
+          card.innerHTML = `<div class="pick-body"><p class="dim">No more
+            strong picks in ${genre} yet — rate more movies.</p></div>`;
+        }
       }),
     );
-    picksEl.appendChild(card);
+    return card;
   }
+
+  for (const [genre, pick] of picks) picksEl.appendChild(makePickCard(genre, pick));
 }
 
 /**
