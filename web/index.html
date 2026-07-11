@@ -37,20 +37,19 @@
 
     <section id="onboarding" hidden></section>
 
-    <section id="dashboard" hidden></section>
-
-    <section id="myratings" hidden></section>
-
     <section class="searchbox" id="searchbox" hidden>
-      <input
-        id="query"
-        type="search"
-        aria-label="Search movies"
-        placeholder='Try “mind-bending sci-fi”, “gritty crime thriller”, or a title…'
-        autocomplete="off"
-        autofocus
-      />
-      <button id="go">Search</button>
+      <label class="search-label" for="query">What are we watching?</label>
+      <div class="search-row">
+        <input
+          id="query"
+          type="search"
+          aria-label="Search movies"
+          placeholder='Try “mind-bending sci-fi”, “gritty crime thriller”, or a title…'
+          autocomplete="off"
+          autofocus
+        />
+        <button id="go">Search</button>
+      </div>
     </section>
 
     <details id="debug" class="debug" hidden>
@@ -71,6 +70,10 @@
     <div id="empty" class="empty" hidden>
       <img src="./nores.png" alt="No results found — try another vibe" width="240" />
     </div>
+
+    <section id="dashboard" hidden></section>
+
+    <section id="myratings" hidden></section>
 
     <footer class="credits">
       Data: <a href="https://grouplens.org/datasets/movielens/">MovieLens</a>

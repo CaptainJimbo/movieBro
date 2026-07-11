@@ -34,11 +34,13 @@ export async function renderDashboard(
   const byId = new Map(movies.map((m) => [m.id, m]));
   const picks = genrePicks(movies, neighbors, getRatings());
 
+  // No "refresh picks" button: rating a pick already swaps its own genre
+  // bin live, and every dashboard render re-derives the top-3 genres — a
+  // manual refresh was almost always a visual no-op.
   container.innerHTML = `
     <div class="dash-head">
       <h2>Your next watch</h2>
       <span class="dash-tools">
-        <button id="refresh-picks" title="re-run recommendations with your latest ratings">↻ refresh picks</button>
         <button id="rate-more">＋ rate more movies</button>
         <button id="my-ratings">❤️ my ratings</button>
       </span>
@@ -48,9 +50,6 @@ export async function renderDashboard(
 
   container.querySelector("#rate-more")!.addEventListener("click", onRateMore);
   container.querySelector("#my-ratings")!.addEventListener("click", onMyRatings);
-  container.querySelector("#refresh-picks")!.addEventListener("click", () => {
-    void renderDashboard(container, movies, onRateMore, onMyRatings);
-  });
 
   const picksEl = container.querySelector<HTMLElement>("#picks")!;
   const stripEl = container.querySelector<HTMLElement>("#strip")!;
