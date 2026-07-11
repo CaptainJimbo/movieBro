@@ -66,9 +66,9 @@ export function renderMyRatings(
                      : `<div class="thumb-blank"></div>`}
       <span class="raterow-title">${movie.title}${movie.year ? ` (${movie.year})` : ""}</span>
       <span class="raterow-actions">
-        <button data-act="love" title="loved it">❤️</button>
-        <button data-act="nope" title="dud">🥔</button>
-        <button data-act="remove" title="remove rating">✕</button>
+        <button data-act="love" title="loved it" aria-label="Love ${movie.title}">❤️</button>
+        <button data-act="nope" title="dud" aria-label="Nope ${movie.title}">🥔</button>
+        <button data-act="remove" title="remove rating" aria-label="Remove rating for ${movie.title}">✕</button>
       </span>`;
     row.querySelectorAll<HTMLButtonElement>("button").forEach((b) =>
       b.addEventListener("click", () => {

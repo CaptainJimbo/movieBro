@@ -82,9 +82,9 @@ export async function renderDashboard(
         <div class="pick-title">${m.title}${m.year ? ` (${m.year})` : ""}</div>
         ${because ? `<div class="pick-why">because you ❤️ ${because}</div>` : ""}
         <div class="pick-actions">
-          <button data-act="love" title="loved it">❤️</button>
-          <button data-act="nope" title="dud">🥔</button>
-          <button data-act="more" title="viewers also liked">more like this ▸</button>
+          <button data-act="love" title="loved it" aria-label="Love ${m.title}">❤️</button>
+          <button data-act="nope" title="dud" aria-label="Nope ${m.title}">🥔</button>
+          <button data-act="more" title="viewers also liked" aria-label="More movies like ${m.title}">more like this ▸</button>
         </div>
       </div>`;
 

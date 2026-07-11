@@ -110,9 +110,9 @@ export function renderWall(
       <img src="${POSTER_BASE}${movie.poster}" alt="" loading="lazy" />
       <div class="wall-title">${movie.title}${movie.year ? ` (${movie.year})` : ""}</div>
       <div class="wall-actions">
-        <button data-act="love" title="loved it">❤️</button>
-        <button data-act="nope" title="dud">🥔</button>
-        <button data-act="skip" title="haven't seen — show another">⏭️</button>
+        <button data-act="love" title="loved it" aria-label="Love ${movie.title}">❤️</button>
+        <button data-act="nope" title="dud" aria-label="Nope ${movie.title}">🥔</button>
+        <button data-act="skip" title="haven't seen — show another" aria-label="Haven't seen ${movie.title}, show another">⏭️</button>
       </div>`;
     card.querySelectorAll<HTMLButtonElement>("button").forEach((b) =>
       b.addEventListener("click", () => {

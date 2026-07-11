@@ -3,15 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="movieBro — your movie bro. Rate a few movies, get your next watch, and search that knows your taste. Item-item collaborative filtering + hybrid retrieval, running in your browser."
+    />
+    <meta property="og:title" content="movieBro 🎬 — your movie bro" />
+    <meta
+      property="og:description"
+      content="Not a critic. A bro. Rate 10 movies, he does the rest — recommendations, vibe search, and a taste-blend slider."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://captainjimbo.github.io/movieBro/" />
+    <meta property="og:image" content="https://captainjimbo.github.io/movieBro/banner.png" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/png" href="./avatar.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap"
+    />
     <title>movieBro 🎬 — your movie bro</title>
   </head>
   <body>
     <header class="top">
-      <img class="logo" src="./avatar.png" alt="movieBro" width="44" height="44" />
-      <h1>movieBro</h1>
-      <span class="tagline">Not a critic. A bro.</span>
+      <img class="logo" src="./avatar.png" alt="" width="52" height="52" />
+      <div class="top-text">
+        <h1>movie<span class="bro">Bro</span></h1>
+        <span class="tagline">Not a critic. A bro.</span>
+      </div>
     </header>
+    <div class="marquee-lights" aria-hidden="true"></div>
 
     <section id="onboarding" hidden></section>
 
@@ -23,6 +45,7 @@
       <input
         id="query"
         type="search"
+        aria-label="Search movies"
         placeholder='Try “mind-bending sci-fi”, “gritty crime thriller”, or a title…'
         autocomplete="off"
         autofocus
@@ -46,7 +69,7 @@
     <section id="results" class="grid" aria-live="polite"></section>
 
     <div id="empty" class="empty" hidden>
-      <img src="./nores.png" alt="No results" width="240" />
+      <img src="./nores.png" alt="No results found — try another vibe" width="240" />
     </div>
 
     <footer class="credits">
