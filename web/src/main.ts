@@ -63,14 +63,27 @@ function renderBlended(): void {
 }
 
 /**
- * Show the onboarding wall view (dashboard + search hidden).
+ * Hide the WHOLE search surface — box, results grid, status line, blend
+ * panel, and the potato empty state. Views that aren't the dashboard
+ * must not carry leftover search furniture (bug: results/status rode
+ * along to the wall and My ratings).
+ */
+function hideSearchUI(): void {
+  searchboxEl.hidden = true;
+  resultsEl.hidden = true;
+  statusEl.hidden = true;
+  debugEl.hidden = true;
+  emptyEl.hidden = true;
+}
+
+/**
+ * Show the onboarding wall view (dashboard + all search UI hidden).
  * Used on first visit and via the dashboard's "rate more" button.
  */
 async function showOnboarding(): Promise<void> {
   dashboardEl.hidden = true;
   myratingsEl.hidden = true;
-  searchboxEl.hidden = true;
-  resultsEl.hidden = true;
+  hideSearchUI();
   onboardingEl.hidden = false;
   renderWall(onboardingEl, await loadCatalog(), showDashboard);
 }
@@ -78,7 +91,8 @@ async function showOnboarding(): Promise<void> {
 /**
  * Show the dashboard view (wall hidden, search available below).
  * Re-renders picks from the current localStorage ratings — so edits
- * made in "my ratings" are applied on the way back.
+ * made in "my ratings" are applied on the way back. A previous search's
+ * results (and its status/blend panel) come back with the view.
  */
 async function showDashboard(): Promise<void> {
   onboardingEl.hidden = true;
@@ -86,6 +100,9 @@ async function showDashboard(): Promise<void> {
   dashboardEl.hidden = false;
   searchboxEl.hidden = false;
   resultsEl.hidden = false;
+  const hasResults = lastResults.length > 0;
+  statusEl.hidden = !hasResults;
+  debugEl.hidden = !(hasResults && ratingCount() > 0);
   await renderDashboard(dashboardEl, await loadCatalog(),
     () => void showOnboarding(), () => void showMyRatings());
 }
@@ -97,8 +114,7 @@ async function showDashboard(): Promise<void> {
 async function showMyRatings(): Promise<void> {
   onboardingEl.hidden = true;
   dashboardEl.hidden = true;
-  searchboxEl.hidden = true;
-  resultsEl.hidden = true;
+  hideSearchUI();
   myratingsEl.hidden = false;
   renderMyRatings(myratingsEl, await loadCatalog(), () => void showDashboard());
 }
